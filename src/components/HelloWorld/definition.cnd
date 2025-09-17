@@ -1,0 +1,3 @@
+[classifiedads:helloWorld] > jnt:content, classifiedadsmix:component orderable
+ - name (string) i18n mandatory
+ + * (classifiedads:helloCard) = classifiedads:helloCard
