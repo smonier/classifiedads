@@ -1,0 +1,7 @@
+[classadnt:classifiedSearch] > jnt:content, classifiedadsmix:component
+ - placeholder (string) i18n
+ - resultsPerPage (long) = 24
+ - enableCategoryFacet (boolean) = 'true' autocreated
+ - enableLocationFacet (boolean) = 'true' autocreated
+ - enablePriceFacet (boolean) = 'true' autocreated
+ - folder (weakreference, picker[type='contentfolder'])
