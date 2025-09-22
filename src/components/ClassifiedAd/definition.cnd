@@ -1,0 +1,14 @@
+[classadnt:classifiedAd] > jnt:content, jmix:mainResource, mix:title, jmix:structuredContent, classadmix:withContact, classadmix:withPrice, classadmix:withImages, classadmix:withLocation, classadmix:withFlags, classifiedadsmix:component
+ orderable
+ - jcr:title (string) i18n primary mandatory
+ - description (string, richtext[ckeditor.toolbar='Default',ckeditor.customConfig='$context/modules/classifiedads/javascript/ckeditor/config/default.js']) internationalized
+ - category (string, choicelist[resourceBundle]) facetable mandatory < 'vehicle','realEstate','job','service','electronics','furniture','pet','other'
+ - condition (string, choicelist[resourceBundle]) facetable < 'new','usedLikeNew','usedGood','usedFair','refurbished'
+ - availability (string, choicelist[resourceBundle]) facetable < 'inStock','outOfStock','reserved','sold'
+ - datePosted (date) mandatory facetable
+ - validThrough (date) facetable
+ - itemType (string, choicelist[resourceBundle]) < 'product','service','accommodation','vehicle','other'
+ - externalUrl (string)
+ - sku (string)
+ - brand (string)
+ - model (string)

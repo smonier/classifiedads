@@ -1,0 +1,271 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: radial-gradient(circle at top left, #f8fafc, #e2e8f0);
+}
+
+.container {
+  width: min(1200px, 75vw);
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  background: white;
+  border-radius: 1.5rem;
+  box-shadow: 0 25px 60px -25px rgb(15 23 42 / 35%);
+  padding: clamp(1.5rem, 3vw, 3rem);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.titleBlock {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.priceBlock {
+  display: grid;
+  gap: 0.4rem;
+  text-align: right;
+}
+
+.price {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: #0f172a;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 700;
+}
+
+.price small {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #b45309;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.contentLayout {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.galleryColumn {
+  display: grid;
+  gap: 1rem;
+}
+
+.primaryImage {
+  border-radius: 1.25rem;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: #f1f5f9;
+}
+
+.primaryImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbnailRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+.thumbnail {
+  border: none;
+  padding: 0;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  cursor: pointer;
+  background: #f8fafc;
+}
+
+.thumbnail img {
+  width: 50%;
+  height: 50%;
+  object-fit: cover;
+  transition: transform 0.25s ease;
+}
+
+.thumbnail:hover img {
+  transform: scale(1.05);
+}
+
+.detailsColumn {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+}
+
+.summaryCard,
+.contactCard {
+  border-radius: 1.1rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: 0.02em;
+}
+
+.featureList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.featureList li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.featureList li strong {
+  color: #0f172a;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cta:hover {
+  background: #1d4ed8;
+}
+
+.contactName {
+  margin: 0;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.contactActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.contactButton {
+  flex: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: #0f172a;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.contactButton:hover {
+  background: #1e293b;
+}
+
+.address {
+  margin: 0;
+  display: grid;
+  gap: 0.35rem;
+  font-style: normal;
+  color: #475569;
+}
+
+.description {
+  line-height: 1.7;
+  color: #1f2937;
+  font-size: 1rem;
+}
+
+.description p + p {
+  margin-top: 1.1rem;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+@media (max-width: 1024px) {
+  .container {
+    width: min(100%, 90vw);
+  }
+
+  .contentLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .priceBlock {
+    text-align: left;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .container {
+    padding: 1.5rem;
+    border-radius: 1rem;
+  }
+
+  .thumbnailRow {
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  }
+}

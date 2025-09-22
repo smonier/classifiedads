@@ -1,3 +1,5 @@
+import { CLASSIFIED_AD_PROPERTY_NAMES } from "../graphql/classifiedAds.js";
+
 export type Maybe<T> = T | null | undefined;
 
 const PRICE_UNIT_SUFFIX: Record<string, string> = {
@@ -297,6 +299,10 @@ export const resolveImageUrl = (item: unknown): string | undefined => {
   }
   if (typeof item === "object") {
     const record = item as Record<string, unknown>;
+    const nodePath = toStringValue(record.path);
+    if (nodePath && nodePath.startsWith("/files/")) {
+      return nodePath;
+    }
     const keys = ["url", "downloadUrl", "path", "src", "value", "link", "href"];
     for (const key of keys) {
       const str = nonEmptyString(record[key]);
@@ -322,4 +328,220 @@ export const normalizeLabel = (value: Maybe<unknown>) => {
     return undefined;
   }
   return str.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").replace(/\s+/g, " ").trim();
+};
+
+const PROPERTY_NAME_SET = new Set<string>(CLASSIFIED_AD_PROPERTY_NAMES as ReadonlyArray<string>);
+
+type GraphQLPropertyRecord = { name?: unknown; value?: unknown } | null | undefined;
+
+export const toPropertyMap = (
+  properties: Maybe<Array<GraphQLPropertyRecord>>,
+): Record<string, unknown> => {
+  const map: Record<string, unknown> = {};
+  properties?.forEach((property) => {
+    if (!property) {
+      return;
+    }
+    const name = toStringValue(property.name)?.trim();
+    if (!name || !PROPERTY_NAME_SET.has(name)) {
+      return;
+    }
+    map[name] = property.value;
+  });
+  return map;
+};
+
+const isIterable = (value: unknown): value is Iterable<unknown> => {
+  if (value == null) {
+    return false;
+  }
+  if (typeof value === "string") {
+    return false;
+  }
+  return typeof (value as { [Symbol.iterator]?: unknown })[Symbol.iterator] === "function";
+};
+
+const normalizeIdentifier = (value: Maybe<unknown>) => nonEmptyString(value);
+
+export type FolderIdentifiers = { path?: string; uuid?: string };
+
+export const resolveFolderReference = (reference: Maybe<unknown>): FolderIdentifiers => {
+  if (!reference) {
+    return { path: undefined, uuid: undefined };
+  }
+
+  if (typeof reference === "string") {
+    const trimmed = reference.trim();
+    if (!trimmed) {
+      return { path: undefined, uuid: undefined };
+    }
+    if (trimmed.startsWith("/")) {
+      return { path: trimmed, uuid: undefined };
+    }
+    return { path: undefined, uuid: trimmed };
+  }
+
+  if (isIterable(reference)) {
+    for (const item of reference) {
+      const resolved = resolveFolderReference(item as Maybe<unknown>);
+      if (resolved.path || resolved.uuid) {
+        return resolved;
+      }
+    }
+  }
+
+  if (typeof reference === "object") {
+    const record = reference as Record<string, unknown>;
+
+    const nestedCandidates: Array<Maybe<unknown>> = [
+      record.node,
+      record.target,
+      record.value,
+      record.folder,
+      record.ref,
+      callMethod<unknown>(reference, "getNode"),
+      callMethod<unknown>(reference, "getTarget"),
+    ];
+
+    for (const candidate of nestedCandidates) {
+      const next = resolveFolderReference(candidate);
+      if (next.path || next.uuid) {
+        return next;
+      }
+    }
+
+    const pathCandidates: Array<Maybe<unknown>> = [
+      record.path,
+      record.folderPath,
+      record.url,
+      record.link,
+      record.pathInfo,
+      callMethod<unknown>(reference, "getPath"),
+      callMethod<unknown>(reference, "getPathInfo"),
+    ];
+
+    const uuidCandidates: Array<Maybe<unknown>> = [
+      record.uuid,
+      record.id,
+      record.identifier,
+      record.key,
+      callMethod<unknown>(reference, "getIdentifier"),
+      callMethod<unknown>(reference, "getUUID"),
+    ];
+
+    const path = pathCandidates
+      .map((candidate) => normalizeIdentifier(candidate))
+      .find((value): value is string => typeof value === "string");
+    const uuid = uuidCandidates
+      .map((candidate) => normalizeIdentifier(candidate))
+      .find((value): value is string => typeof value === "string");
+
+    return { path, uuid };
+  }
+
+  return { path: undefined, uuid: undefined };
+};
+
+export type ClassifiedAdSummary = {
+  id: string;
+  uuid?: string;
+  path?: string;
+  title: string;
+  price?: number;
+  priceCurrency?: string;
+  priceUnit?: string;
+  category?: string;
+  availability?: string;
+  condition?: string;
+  itemType?: string;
+  locationCity?: string;
+  locationCountry?: string;
+  featured?: boolean;
+  datePosted?: Maybe<string | number | Date>;
+  imageUrls?: string[];
+  primaryImageUrl?: string;
+};
+
+export const mapGraphQLNodeToClassified = (
+  node: Record<string, unknown> | null | undefined,
+): ClassifiedAdSummary | undefined => {
+  if (!node || typeof node !== "object") {
+    return undefined;
+  }
+
+  const uuid = normalizeIdentifier((node as Record<string, unknown>).uuid);
+  const path = normalizeIdentifier((node as Record<string, unknown>).path);
+  const fallbackId =
+    normalizeIdentifier((node as Record<string, unknown>).id) ??
+    normalizeIdentifier((node as Record<string, unknown>).identifier);
+  const id = uuid ?? path ?? fallbackId;
+  if (!id) {
+    return undefined;
+  }
+
+  const title =
+    nonEmptyString((node as Record<string, unknown>).displayName) ??
+    nonEmptyString((node as Record<string, unknown>).name) ??
+    "Untitled";
+
+  const properties = toPropertyMap((node as Record<string, unknown>).properties as Maybe<Array<GraphQLPropertyRecord>>);
+
+  const price = parseNumber(properties.price);
+  const priceCurrency = normalizeIdentifier(properties.priceCurrency)?.toUpperCase();
+  const priceUnit = normalizeIdentifier(properties.priceUnit)?.toUpperCase();
+  const category = normalizeIdentifier(properties.category);
+  const availability = normalizeIdentifier(properties.availability);
+  const condition = normalizeIdentifier(properties.condition);
+  const itemType = normalizeIdentifier(properties.itemType);
+  const locationCity = normalizeIdentifier(properties.locationCity);
+  const locationCountry = normalizeIdentifier(properties.locationCountry);
+  const featured = boolFrom(properties.featured);
+  const datePosted = properties.datePosted as Maybe<string | number | Date>;
+
+  const imageProperty = (node as Record<string, unknown>).images as
+    | {
+        values?: unknown[];
+        refNodes?: Array<Record<string, unknown> | null | undefined>;
+      }
+    | undefined;
+
+  const refNodeUrls = Array.isArray(imageProperty?.refNodes)
+    ? imageProperty!.refNodes
+        .map((ref) => resolveImageUrl(ref))
+        .filter((value): value is string => typeof value === "string" && value.length > 0)
+    : [];
+
+  const imageValues = Array.isArray(imageProperty?.values) ? imageProperty!.values : [];
+  const valueUrls = imageValues
+    .map((value) => resolveImageUrl(value))
+    .filter((value): value is string => typeof value === "string" && value.length > 0);
+
+  const seen = new Set<string>();
+  const imageUrls = [...refNodeUrls, ...valueUrls].filter((url) => {
+    if (seen.has(url)) {
+      return false;
+    }
+    seen.add(url);
+    return true;
+  });
+
+  return {
+    id,
+    uuid,
+    path,
+    title,
+    price,
+    priceCurrency,
+    priceUnit,
+    category,
+    availability,
+    condition,
+    itemType,
+    locationCity,
+    locationCountry,
+    featured,
+    datePosted,
+    imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+    primaryImageUrl: imageUrls[0],
+  };
 };

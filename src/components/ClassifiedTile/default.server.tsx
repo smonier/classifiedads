@@ -12,7 +12,6 @@ import classes from "./component.module.css";
 import type { ImgHTMLAttributes } from "react";
 import type { JCRNodeWrapper } from "org.jahia.services.content";
 import type { RenderContext, Resource } from "org.jahia.services.render";
-import { imageNodeToImgProps } from "../../commons/libs/imageNodeToProps/index.js";
 
 type Maybe<T> = T | null | undefined;
 
@@ -137,9 +136,13 @@ jahiaComponent(
         primaryImageNode = item;
       }
       if (!primaryImageUrl) {
-        const url = resolveImageUrl(item);
-        if (url) {
-          primaryImageUrl = url;
+        if (isJcrNode(item)) {
+          primaryImageUrl = buildNodeUrl(item as JCRNodeWrapper);
+        } else {
+          const url = resolveImageUrl(item);
+          if (url) {
+            primaryImageUrl = url;
+          }
         }
       }
       if (primaryImageNode && primaryImageUrl) {
@@ -158,26 +161,19 @@ jahiaComponent(
     if (primaryImageNode) {
       if (renderContext) {
         const identifier = primaryImageNode.getIdentifier?.();
+        const path = primaryImageNode.getPath?.();
         if (identifier) {
           server.render.addCacheDependency({ uuid: identifier }, renderContext);
+        } else if (path) {
+          server.render.addCacheDependency({ path }, renderContext);
         }
       }
-      try {
-        const imgProps = imageNodeToImgProps({
-          imageNode: primaryImageNode,
-          alt: title,
-          config: { widths: [200, 400] },
-        });
-        imageProps = {
-          ...imgProps,
-          sizes: "200px",
-          loading: "lazy",
-        };
-      } catch (error) {
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn("Failed to build tile image props", error);
-        }
-      }
+      const nodeUrl = resolveImageUrl(primaryImageNode);
+      imageProps = {
+        src: nodeUrl ?? placeholderSrc,
+        alt: title,
+        loading: "lazy",
+      };
     } else if (primaryImageUrl) {
       imageProps = {
         src: primaryImageUrl,

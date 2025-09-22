@@ -1,0 +1,4 @@
+[classadnt:classifiedTile] > jnt:content, mix:title, classadmix:withImages, classifiedadsmix:component
+ - jcr:title (string) i18n primary mandatory
+ - shortText (string) i18n
+ - linkTarget (weakreference, picker[type='editoriallink'])

@@ -1,0 +1,10 @@
+[classadnt:classifiedAdList] > jnt:content, jmix:list, mix:title, jmix:cache, classifiedadsmix:component
+ - teaser (string, richtext) internationalized
+ - maxItems (long) = 12
+ - folder (weakreference, picker[type='contentfolder'])
+ - filterCategory (string, choicelist[resourceBundle]) < 'vehicle','realEstate','job','service','electronics','furniture','pet','other'
+ - filterAvailability (string, choicelist[resourceBundle]) < 'inStock','outOfStock','reserved','sold'
+ - minPrice (decimal)
+ - maxPrice (decimal)
+ - orderBy (string, choicelist[resourceBundle]) = 'datePostedDesc' autocreated < 'datePostedDesc','datePostedAsc','priceAsc','priceDesc'
+ - j:subNodesView (string, choicelist[templates=classadnt:classifiedAd,resourceBundle,image]) nofulltext itemtype=layout

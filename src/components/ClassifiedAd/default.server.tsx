@@ -1,4 +1,10 @@
-import { buildModuleFileUrl, jahiaComponent, server } from "@jahia/javascript-modules-library";
+import {
+  buildModuleFileUrl,
+  buildNodeUrl,
+  jahiaComponent,
+  server,
+} from "@jahia/javascript-modules-library";
+import placeholder from "../../../static/illustrations/interface.svg"; // Adjust if needed
 import {
   boolFrom,
   describePriceUnit,
@@ -15,7 +21,6 @@ import classes from "./component.module.css";
 import type { ImgHTMLAttributes } from "react";
 import type { JCRNodeWrapper } from "org.jahia.services.content";
 import type { RenderContext, Resource } from "org.jahia.services.render";
-import { imageNodeToImgProps } from "../../commons/libs/imageNodeToProps/index.js";
 
 type Maybe<T> = T | null | undefined;
 
@@ -54,12 +59,48 @@ type ClassifiedAdContext = {
 };
 
 const isJcrNode = (value: unknown): value is JCRNodeWrapper => {
-  return (
-    value != null &&
-    typeof value === "object" &&
-    typeof (value as Partial<JCRNodeWrapper>).getIdentifier === "function" &&
-    typeof (value as Partial<JCRNodeWrapper>).getPath === "function"
-  );
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const candidate = value as Partial<JCRNodeWrapper>;
+  return typeof candidate.getIdentifier === "function" && typeof candidate.getPath === "function";
+};
+
+const toImageProps = (
+  imageNode: JCRNodeWrapper | undefined,
+  alt: string,
+  renderContext?: RenderContext,
+): ImgHTMLAttributes<HTMLImageElement> => {
+  const fallbackSrc = buildModuleFileUrl(placeholder);
+
+  if (imageNode && isJcrNode(imageNode) && renderContext) {
+    try {
+      const uuid = imageNode.getIdentifier?.();
+      const path = imageNode.getPath?.();
+      if (uuid) {
+        server.render.addCacheDependency({ uuid }, renderContext);
+      } else if (path) {
+        server.render.addCacheDependency({ path }, renderContext);
+      }
+      const src = buildNodeUrl(imageNode);
+      return {
+        src,
+        alt,
+        loading: "lazy",
+        onError: (event) => {
+          (event.currentTarget as HTMLImageElement).src = fallbackSrc;
+        },
+      };
+    } catch (error) {
+      console.warn("[ClassifiedAd] Unable to build image props", error);
+    }
+  }
+
+  return {
+    src: fallbackSrc,
+    alt,
+    loading: "lazy",
+  };
 };
 
 jahiaComponent(
@@ -121,42 +162,29 @@ jahiaComponent(
     const gallery = toArray<unknown>(props.images as Maybe<Iterable<unknown> | ArrayLike<unknown>>)
       .map((item, index) => {
         if (isJcrNode(item)) {
-          if (renderContext) {
-            const identifier = item.getIdentifier?.();
-            if (identifier) {
-              server.render.addCacheDependency({ uuid: identifier }, renderContext);
-            }
-          }
-          try {
-            const imgProps = imageNodeToImgProps({
-              imageNode: item,
+          return { key: index, props: toImageProps(item, heading, renderContext) };
+        }
+        const resolved = resolveImageUrl(item);
+        if (resolved) {
+          return {
+            key: index,
+            props: {
+              src: resolved,
               alt: heading,
-              config: { widths: [480, 768, 1024, 1440] },
-            });
-            const props: ImgHTMLAttributes<HTMLImageElement> = {
-              ...imgProps,
               loading: "lazy",
-              sizes: "(max-width: 768px) 100vw, 900px",
-            };
-            return { key: index, props };
-          } catch (error) {
-            if (typeof console !== "undefined" && console.warn) {
-              console.warn("Failed to build classified ad image props", error);
-            }
-          }
+            } as ImgHTMLAttributes<HTMLImageElement>,
+          };
         }
-        const src = resolveImageUrl(item);
-        if (!src) {
-          return undefined;
-        }
-        const props: ImgHTMLAttributes<HTMLImageElement> = {
-          src,
-          alt: heading,
-          loading: "lazy",
+        return {
+          key: index,
+          props: {
+            src: buildModuleFileUrl(placeholder),
+            alt: heading,
+            loading: "lazy",
+          } as ImgHTMLAttributes<HTMLImageElement>,
         };
-        return { key: index, props };
       })
-      .filter((image): image is { key: number; props: ImgHTMLAttributes<HTMLImageElement> } => Boolean(image));
+      .filter((image) => Boolean(image));
 
     const infoItems = [
       { label: "Category", value: categoryLabel },
@@ -169,7 +197,7 @@ jahiaComponent(
       { label: "Valid until", value: validThrough },
     ].filter((item) => item.value);
 
-    const editMode = renderContext?.isEditMode() ?? false;
+    const editMode = renderContext?.isEditMode ?? false;
 
     return (
       <article className={classes.ad}>
@@ -273,7 +301,10 @@ jahiaComponent(
                 </a>
               )}
               {contactPhone && (
-                <a className={classes.contactAction} href={contactPhoneHref ? `tel:${contactPhoneHref}` : undefined}>
+                <a
+                  className={classes.contactAction}
+                  href={contactPhoneHref ? `tel:${contactPhoneHref}` : undefined}
+                >
                   Call {contactPhone}
                 </a>
               )}

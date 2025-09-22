@@ -1,7 +1,15 @@
 import { buildNodeUrl, getSiteLocales, jahiaComponent } from "@jahia/javascript-modules-library";
 import { t } from "i18next";
 import { Fragment } from "react";
+import type { JCRNodeWrapper } from "org.jahia.services.content";
 import classes from "./component.module.css";
+
+type LanguageSwitcherContext = {
+  mainNode: JCRNodeWrapper;
+  currentResource: {
+    getLocale: () => { toString: () => string };
+  };
+};
 
 jahiaComponent(
   {
@@ -11,7 +19,7 @@ jahiaComponent(
     // Disable cache for this component
     properties: { "cache.timeout": "0" },
   },
-  (_, { mainNode, currentResource }) => {
+  (_, { mainNode, currentResource }: LanguageSwitcherContext) => {
     const currentLanguage = currentResource.getLocale().toString();
     return (
       <p style={{ textAlign: "center" }}>

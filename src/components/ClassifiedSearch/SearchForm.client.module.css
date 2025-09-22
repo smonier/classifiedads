@@ -1,0 +1,154 @@
+.form {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.intro {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.fieldGroup {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.fieldGroup label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.fieldGroup select,
+.fieldGroup input {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid #cbd5f5;
+  font-size: 0.9rem;
+  color: #1f2937;
+  background: white;
+}
+
+.fieldGroup select {
+  min-height: 120px;
+}
+
+.fieldGroup input[type="number"] {
+  max-width: 160px;
+}
+
+.facets {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdownButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-start;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid #cbd5f5;
+  background: white;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.dropdownCount {
+  margin-left: auto;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+
+.dropdownPreview {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.dropdownMenu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #cbd5f5;
+  border-radius: 0.6rem;
+  box-shadow: 0 12px 24px -20px rgb(15 23 42 / 35%);
+  padding: 0.5rem;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.25rem;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip,
+.chipStatic {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #cbd5f5;
+  background: white;
+  color: #334155;
+  font-size: 0.8rem;
+}
+
+.chip {
+  cursor: pointer;
+}
+
+.submitButton {
+  padding: 0.55rem 1.2rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

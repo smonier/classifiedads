@@ -2,6 +2,9 @@
 <jmix = 'http://www.jahia.org/jahia/mix/1.0'>
 <classifiedads = 'https://example.com/classifiedads/nt/1.0'>
 <classifiedadsmix = 'https://example.com/classifiedads/mix/1.0'>
+<classadnt = 'http://www.jahia.org/classifiedads/nt/1.0'>
+<classadmix = 'http://www.jahia.org/classifiedads/mix/1.0'>
+<classad = 'http://www.jahia.org/template/classifiedads/1.0'>
 
 // Defining the content types is similar to defining a data model: once deployed, you cannot change the type of a property.
 // If you need to do changes during the development phase, it is possible to remove the definitions from the tools:
@@ -12,3 +15,31 @@
 // This mixin creates a category to regroup types in the content type selector UI. Apply it to any definition you want
 // to see in this category.
 [classifiedadsmix:component] > jmix:droppableContent, jmix:accessControllableContent mixin
+
+// Common seller/contact block
+[classadmix:withContact] mixin
+ - sellerName (string) i18n
+ - contactEmail (string)
+ - contactPhone (string)
+
+// Common pricing fields (schema.org Offer)
+[classadmix:withPrice] mixin
+ - price (decimal)
+ - priceCurrency (string, choicelist[resourceBundle]) < 'EUR','USD','GBP'
+ - priceUnit (string, choicelist[resourceBundle]) < 'TOTAL','MONTH','WEEK','DAY','HOUR'
+
+// Media helper
+[classadmix:withImages] mixin
+ - images (weakreference, picker[type='image']) multiple < 'jmix:image'
+
+// Location helper (simple, denormalized)
+[classadmix:withLocation] mixin
+ - locationAddress (string) i18n facetable
+ - locationPostalCode (string) facetable
+ - locationCity (string) i18n facetable
+ - locationCountry (string, choicelist[resourceBundle]) facetable < 'FR','CH','BE','DE','ES','IT','UK','US','OTHER'
+
+// Feature / promotion flags
+[classadmix:withFlags] mixin
+ - featured (boolean)
+ - allowContactByForm (boolean) = 'true' autocreated

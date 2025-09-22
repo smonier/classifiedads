@@ -5,3 +5,4 @@
  - enableLocationFacet (boolean) = 'true' autocreated
  - enablePriceFacet (boolean) = 'true' autocreated
  - folder (weakreference, picker[type='contentfolder'])
+ - resultsPage (weakreference, picker[type='page'])

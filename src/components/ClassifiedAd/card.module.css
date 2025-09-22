@@ -1,0 +1,50 @@
+.card {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 12px 24px -16px rgb(15 23 42 / 35%);
+  overflow: hidden;
+}
+
+.link {
+  display: grid;
+  text-decoration: none;
+  color: inherit;
+  grid-template-rows: auto 1fr;
+}
+
+.image {
+  width: 100%;
+  height: clamp(160px, 40vw, 200px);
+  object-fit: cover;
+}
+
+.body {
+  padding: 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.price {
+  margin: 0;
+  color: #0d9488;
+  font-weight: 600;
+}
+
+@media (max-width: 340px) {
+  .card {
+    border-radius: 0.75rem;
+  }
+
+  .image {
+    height: 160px;
+  }
+}

@@ -9,13 +9,19 @@ import { Trans } from "react-i18next";
 import Celebrate from "./Celebrate.client.jsx";
 import classes from "./component.module.css";
 
+type HelloWorldContext = {
+  renderContext: {
+    isEditMode: () => boolean;
+  };
+};
+
 jahiaComponent(
   {
     nodeType: "classifiedads:helloWorld",
     displayName: "Hello World Component",
     componentType: "view",
   },
-  ({ name }: { name: string }, { renderContext }) => {
+  ({ name }: { name: string }, { renderContext }: HelloWorldContext) => {
     return (
       <>
         <section className={classes.section}>

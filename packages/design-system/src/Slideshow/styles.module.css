@@ -1,0 +1,97 @@
+@value variables: "../variables.module.css";
+@value breakpoints_sm, breakpoints_md, breakpoints_lg, space_3, space_4 from variables;
+
+.container {
+	container-type: inline-size;
+}
+
+.containerImage {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: space_3;
+	margin: 0;
+	> * {
+		min-height: 0;
+	} /* column */
+
+	@container (min-width: breakpoints_sm) {
+		flex-direction: row;
+		> * {
+			min-width: 0;
+		} /* row */
+		gap: space_4;
+	}
+
+	@container (min-width: breakpoints_lg) {
+		/*each nav button area is 104px, so remove 2 btns -> 208px*/
+		width: calc(100% + 208px);
+		translate: -104px;
+	}
+
+	.image {
+		object-fit: contain;
+		background: rgba(0, 0, 0, 0.3);
+		max-width: 90vw;
+		max-height: 60vh;
+		width: 100%;
+		height: 100%;
+
+		@container (min-width: breakpoints_sm) {
+			max-height: 80vh;
+		}
+	}
+}
+
+.button {
+	border: 0;
+	background: transparent;
+	color: var(--luxe-color-gray);
+	opacity: 0.6;
+	transition: color 0.2s ease-in-out;
+	cursor: pointer;
+	font-size: 32px;
+	line-height: 1;
+
+	&:focus {
+		outline: none;
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--luxe-color-gold);
+		outline-offset: 2px;
+	}
+
+	&:hover {
+		opacity: 1;
+		color: var(--luxe-color-gold);
+	}
+
+	&[disabled] {
+		opacity: 0.2;
+		pointer-events: none;
+	}
+}
+
+.buttonNav {
+	width: 44px;
+	font-size: 60px;
+
+	@container (min-width: breakpoints_sm) {
+		width: 80px;
+		font-size: 120px;
+	}
+}
+
+.info {
+	color: var(--luxe-color-gray);
+	font-size: 13px;
+	text-align: center;
+	margin: space_3 0 0 0;
+	word-break: break-word;
+
+	@container (min-width: breakpoints_md) {
+		font-size: 15px;
+	}
+}

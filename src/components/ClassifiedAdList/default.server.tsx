@@ -1,21 +1,20 @@
 import { RenderChildren, jahiaComponent, server } from "@jahia/javascript-modules-library";
+import type { ClassifiedAdSummary, Maybe } from "../../utils/classifieds.js";
 import {
-  boolFrom,
   formatDate,
   formatPrice,
+  mapGraphQLNodeToClassified,
   normalizeLabel,
   parseNumber,
+  resolveFolderReference,
   toStringValue,
 } from "../../utils/classifieds.js";
 import {
   CLASSIFIED_ADS_BY_PATH_QUERY,
   CLASSIFIED_ADS_BY_UUID_QUERY,
-  CLASSIFIED_AD_PROPERTY_NAMES,
 } from "../../graphql/classifiedAds.js";
 import classes from "./component.module.css";
 import type { RenderContext, Resource } from "org.jahia.services.render";
-
-type Maybe<T> = T | null | undefined;
 
 type ClassifiedAdListProps = {
   teaser?: Maybe<string>;
@@ -44,102 +43,6 @@ type GraphQLExecutor = {
   scope: unknown;
 };
 
-type ClassifiedAdSummary = {
-  id: string;
-  uuid?: string;
-  title: string;
-  path?: string;
-  price?: number;
-  priceCurrency?: Maybe<string>;
-  priceUnit?: Maybe<string>;
-  category?: Maybe<string>;
-  availability?: Maybe<string>;
-  locationCity?: Maybe<string>;
-  locationCountry?: Maybe<string>;
-  featured?: boolean;
-  datePosted?: Maybe<string | number | Date>;
-};
-
-const resolveFolderIdentifiers = (reference: Maybe<unknown>) => {
-  if (!reference) {
-    return { path: undefined, uuid: undefined };
-  }
-  if (typeof reference === "string") {
-    const trimmed = reference.trim();
-    if (!trimmed) {
-      return { path: undefined, uuid: undefined };
-    }
-    if (trimmed.startsWith("/")) {
-      return { path: trimmed, uuid: undefined };
-    }
-    return { path: undefined, uuid: trimmed };
-  }
-  if (typeof reference === "object") {
-    const record = reference as Record<string, unknown>;
-    const path = typeof record.path === "string" ? record.path : undefined;
-    const uuid =
-      typeof record.uuid === "string"
-        ? record.uuid
-        : typeof record.id === "string"
-          ? record.id
-          : undefined;
-    return { path, uuid };
-  }
-  return { path: undefined, uuid: undefined };
-};
-
-const PROPERTY_NAME_SET = new Set<string>(CLASSIFIED_AD_PROPERTY_NAMES);
-
-const toPropertyMap = (properties: Maybe<Array<Record<string, unknown>>>) => {
-  const map: Record<string, unknown> = {};
-  properties?.forEach((property) => {
-    if (!property) {
-      return;
-    }
-    const name = typeof property.name === "string" ? property.name : undefined;
-    if (!name || !PROPERTY_NAME_SET.has(name)) {
-      return;
-    }
-    const value = property.value;
-    map[name] = value;
-  });
-  return map;
-};
-
-const mapNodeToSummary = (node: Record<string, unknown>): ClassifiedAdSummary | undefined => {
-  const uuid = typeof node.uuid === "string" ? node.uuid : undefined;
-  const id = uuid ?? (node.id as string) ?? (node.path as string);
-  if (!id) {
-    return undefined;
-  }
-  const title = (node.displayName as string) ?? "Untitled";
-  const properties = toPropertyMap(node.properties as Maybe<Array<Record<string, unknown>>>);
-  const price = parseNumber(properties.price as Maybe<number | string>);
-  const priceCurrency = properties.priceCurrency as Maybe<string>;
-  const priceUnit = properties.priceUnit as Maybe<string>;
-  const category = properties.category as Maybe<string>;
-  const availability = properties.availability as Maybe<string>;
-  const locationCity = properties.locationCity as Maybe<string>;
-  const locationCountry = properties.locationCountry as Maybe<string>;
-  const featured = boolFrom(properties.featured as Maybe<boolean | string>);
-  const datePosted = properties.datePosted as Maybe<string | number | Date>;
-
-  return {
-    id,
-    uuid,
-    title,
-    path: (node.path as Maybe<string>) ?? undefined,
-    price,
-    priceCurrency,
-    priceUnit,
-    category,
-    availability,
-    locationCity,
-    locationCountry,
-    featured,
-    datePosted,
-  };
-};
 
 const getGraphQLExecutor = (context: ClassifiedAdListContext): GraphQLExecutor | undefined => {
   const scopes: Array<{ scope: unknown; fn: unknown }> = [];
@@ -158,7 +61,7 @@ const getGraphQLExecutor = (context: ClassifiedAdListContext): GraphQLExecutor |
   if (api && typeof api === "object") {
     const apiRecord = api as Record<string, unknown>;
     const apiGraphql = apiRecord.graphql;
-    const apiExecuteGraphQL = apiRecord.executeGraphQL ?? apiRecord.execute;
+    const apiExecuteGraphQL = apiRecord.executeGraphQL;
     const apiQuery = apiRecord.query ?? apiRecord.runQuery;
     if (typeof apiGraphql === "function") {
       scopes.push({ scope: apiRecord, fn: apiGraphql });
@@ -272,6 +175,19 @@ const sortItems = (items: ClassifiedAdSummary[], orderBy: Maybe<string>) => {
   return sorted;
 };
 
+const formatFilterPrice = (value: Maybe<number | string>, locale: string): string | undefined => {
+  const numeric = parseNumber(value);
+  if (numeric !== undefined) {
+    try {
+      return new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(numeric);
+    } catch {
+      return String(numeric);
+    }
+  }
+  const stringValue = toStringValue(value);
+  return stringValue && stringValue.trim().length > 0 ? stringValue.trim() : undefined;
+};
+
 jahiaComponent(
   {
     nodeType: "classadnt:classifiedAdList",
@@ -282,10 +198,16 @@ jahiaComponent(
   async (props: ClassifiedAdListProps, context: ClassifiedAdListContext) => {
     const { renderContext, currentResource } = context;
     const locale = currentResource?.getLocale().toString() ?? "en";
-    const editMode = renderContext?.isEditMode ?? false;
+    const editMode = renderContext?.isEditMode?.() ?? false;
 
     const maxItems = parseNumber(props.maxItems) ?? 12;
-    const folderIds = resolveFolderIdentifiers(props.folder);
+    const folderIds = resolveFolderReference(props.folder);
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[ClassifiedAdList] Resolved folder reference", {
+        raw: props.folder,
+        folderIds,
+      });
+    }
     const executor = getGraphQLExecutor(context);
 
     let fetchError: unknown;
@@ -293,6 +215,13 @@ jahiaComponent(
 
     if (executor && (folderIds.path || folderIds.uuid)) {
       try {
+        if (process.env.NODE_ENV !== "production") {
+          console.info("[ClassifiedAdList] Fetching classifieds", {
+            folderIds,
+            locale,
+            strategy: folderIds.path ? "path" : "uuid",
+          });
+        }
         const variables = {
           language: locale,
           ...(folderIds.path ? { path: folderIds.path } : {}),
@@ -305,9 +234,13 @@ jahiaComponent(
           ? (data?.nodeByPath as Record<string, unknown>)
           : (data?.nodeById as Record<string, unknown>);
         const raw = (container?.children as Record<string, unknown>)?.nodes as Maybe<Array<Record<string, unknown>>>;
-        fetched = raw?.map((node) => mapNodeToSummary(node)).filter((item): item is ClassifiedAdSummary => !!item) ?? [];
+        fetched =
+          raw
+            ?.map((node) => mapGraphQLNodeToClassified(node as Record<string, unknown>))
+            .filter((item): item is ClassifiedAdSummary => !!item) ?? [];
       } catch (error) {
         fetchError = error;
+        console.error("[ClassifiedAdList] Failed to fetch classifieds", error);
       }
     } else if (props.folder && !executor && editMode) {
       fetchError = new Error("GraphQL executor unavailable in this context");
@@ -323,6 +256,13 @@ jahiaComponent(
       });
       items = sortItems(items, props.orderBy ?? "datePostedDesc");
       items = items.slice(0, maxItems);
+      if (process.env.NODE_ENV !== "production") {
+        console.info("[ClassifiedAdList] Prepared classified items", {
+          total: fetched?.length ?? 0,
+          afterFilters: items.length,
+          folderIds,
+        });
+      }
     }
 
     // Use toStringValue to safely normalize teaser content for dangerouslySetInnerHTML
@@ -336,6 +276,9 @@ jahiaComponent(
       }
     })();
 
+    const minPriceLabel = formatFilterPrice(props.minPrice, locale);
+    const maxPriceLabel = formatFilterPrice(props.maxPrice, locale);
+
     try {
       if (process.env.NODE_ENV === 'development') {
         console.log("[ClassifiedAdList] Props:", props);
@@ -345,14 +288,20 @@ jahiaComponent(
         console.log("[ClassifiedAdList] maxItems:", maxItems, typeof maxItems);
         if (items.length > 0) {
           console.log("[ClassifiedAdList] First item sample:", items[0]);
+          console.log("[ClassifiedAdList] item.id type:", typeof items[0].id);
+          console.log("[ClassifiedAdList] item.formattedPrice sample:", formatPrice(items[0].price, items[0].priceCurrency, items[0].priceUnit, locale));
         }
       }
+
+      // Helper to ensure className is always a string
+      const safeClass = (value: unknown): string =>
+        typeof value === "string" ? value : "";
 
       return (
         <section className={classes.list}>
           {typeof teaser === "string" && (
             <div
-              className={classes?.teaser ?? "fallback-teaser"}
+              className={safeClass(classes?.teaser) || "fallback-teaser"}
               dangerouslySetInnerHTML={{ __html: teaser }}
             />
           )}
@@ -360,18 +309,18 @@ jahiaComponent(
           <div className={classes.controls}>
             {typeof maxItems === "number" && <span>Showing up to {maxItems} items</span>}
             <div className={classes.filters}>
-              {props.filterCategory && <span className={classes.filterBadge}>Category: {normalizeLabel(props.filterCategory)}</span>}
+              {props.filterCategory && <span className={safeClass(classes.filterBadge)}>Category: {normalizeLabel(props.filterCategory)}</span>}
               {props.filterAvailability && (
-                <span className={classes.filterBadge}>Availability: {normalizeLabel(props.filterAvailability)}</span>
+                <span className={safeClass(classes.filterBadge)}>Availability: {normalizeLabel(props.filterAvailability)}</span>
               )}
-              {props.minPrice && <span className={classes.filterBadge}>Min price: {props.minPrice}</span>}
-              {props.maxPrice && <span className={classes.filterBadge}>Max price: {props.maxPrice}</span>}
+              {minPriceLabel && <span className={safeClass(classes.filterBadge)}>Min price: {minPriceLabel}</span>}
+              {maxPriceLabel && <span className={safeClass(classes.filterBadge)}>Max price: {maxPriceLabel}</span>}
             </div>
           </div>
 
           {items.length > 0 ? (
             <div className={classes.items}>
-              {items.map((item) => {
+              {items.map((item, index) => {
                 const formattedPrice = formatPrice(item.price, item.priceCurrency, item.priceUnit, locale);
                 const posted = formatDate(item.datePosted, locale);
                 const locationLabel = [item.locationCity, item.locationCountry].filter(Boolean).join(", ");
@@ -383,22 +332,33 @@ jahiaComponent(
                   }
                 }
                 const itemHref = item.path;
+                // Guard key: only string or number, fallback to index
+                const key = (typeof item.id === "string" || typeof item.id === "number") ? item.id : `fallback-${index}`;
+                if (process.env.NODE_ENV === 'development') {
+                  // Dev logging for key, id, formattedPrice, classes
+                  console.log("[ClassifiedAdList] Rendering item:", {
+                    id: item.id,
+                    key,
+                    formattedPrice,
+                    classes,
+                  });
+                }
                 return (
-                  <article key={item.id} className={classes?.card ?? "fallback-card"}>
-                    <h3 className={classes?.cardTitle ?? "fallback-card-title"}>{item.title}</h3>
-                    <div className={classes?.cardMeta ?? "fallback-card-meta"}>
+                  <article key={key} className={safeClass(classes?.card) || "fallback-card"}>
+                    <h3 className={safeClass(classes?.cardTitle) || "fallback-card-title"}>{item.title}</h3>
+                    <div className={safeClass(classes?.cardMeta) || "fallback-card-meta"}>
                       {item.category && <span>{normalizeLabel(item.category)}</span>}
                       {item.availability && <span>{normalizeLabel(item.availability)}</span>}
                       {locationLabel && <span>{locationLabel}</span>}
-                      {item.featured && <span className={classes.filterBadge}>Featured</span>}
+                      {item.featured && <span className={safeClass(classes.filterBadge)}>Featured</span>}
                     </div>
                     {formattedPrice && (
-                      <div className={classes?.cardPrice ?? "fallback-card-price"}>{formattedPrice}</div>
+                      <div className={safeClass(classes?.cardPrice) || "fallback-card-price"}>{formattedPrice}</div>
                     )}
-                    <div className={classes?.cardFooter ?? "fallback-card-footer"}>
+                    <div className={safeClass(classes?.cardFooter) || "fallback-card-footer"}>
                       {posted && <span>Posted {posted}</span>}
                       {itemHref && (
-                        <a className={classes?.cardLink ?? "fallback-card-link"} href={itemHref}>
+                        <a className={safeClass(classes?.cardLink) || "fallback-card-link"} href={itemHref}>
                           View
                         </a>
                       )}

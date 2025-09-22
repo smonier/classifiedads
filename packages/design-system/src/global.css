@@ -1,0 +1,47 @@
+body {
+	font: var(--luxe-font-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: var(--luxe-font-family-display);
+	color: var(--luxe-color-heading);
+}
+
+.capitalize {
+	display: inline-block;
+	&::first-letter {
+		text-transform: uppercase;
+	}
+}
+
+.card {
+	border-radius: 16px;
+	text-decoration: none;
+	color: inherit;
+	padding: 20px;
+	transform: scale(1);
+	transition: all 0.2s ease-in;
+
+	&:hover {
+		transform: scale(1.05);
+		box-shadow: var(--luxe-box-shadow);
+	}
+
+	& > * {
+		margin-bottom: 0;
+	}
+}
+
+.hasDiamond {
+	&:after {
+		content: "✦";
+		color: var(--luxe-color-primary);
+		font-size: 0.4em;
+		margin-left: 4px;
+	}
+}
