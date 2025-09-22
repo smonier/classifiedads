@@ -149,7 +149,7 @@ jahiaComponent(
       });
     }
 
-    const gallery = toArray<unknown>(props.images as Maybe<Iterable<unknown> | ArrayLike<unknown>>)
+    /* const gallery = toArray<unknown>(props.images as Maybe<Iterable<unknown> | ArrayLike<unknown>>)
       .map((item, index) => {
         if (isJcrNode(item)) {
           const node = item as JCRNodeWrapper;
@@ -200,7 +200,7 @@ jahiaComponent(
       .filter((entry) => Boolean(entry));
 
     const primaryImage = gallery[0];
-    const secondaryImages = gallery.slice(1);
+    const secondaryImages = gallery.slice(1); */
 
     const infoItems = [
       { label: "Category", value: categoryLabel },
