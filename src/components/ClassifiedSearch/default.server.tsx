@@ -11,6 +11,7 @@ import {
   type ClassifiedSearchServerProps,
 } from "./serverModel.server.js";
 import classes from "./component.module.css";
+import { t } from "i18next";
 
 type ClassifiedSearchProps = ClassifiedSearchServerProps & { resultsPage?: Maybe<unknown> };
 
@@ -27,7 +28,8 @@ jahiaComponent(
   },
   (props: ClassifiedSearchProps, context: ClassifiedSearchContext) => {
     const { renderContext, currentNode } = context;
-    const placeholder = toStringValue(props.placeholder) ?? "Search classifieds";
+    const placeholder =
+      toStringValue(props.placeholder) ?? t("classifiedSearch.placeholder.default");
     const editMode = Boolean(renderContext?.isEditMode);
 
     if (!renderContext || !currentNode) {
@@ -41,10 +43,7 @@ jahiaComponent(
             }}
           />
           {editMode && (
-            <p className={classes.hint}>
-              Unable to determine current node; results will be limited until the component is
-              placed on a page.
-            </p>
+            <p className={classes.hint}>{t("classifiedSearch.hint.missingContext")}</p>
           )}
         </section>
       );
@@ -58,7 +57,7 @@ jahiaComponent(
     return (
       <section className={classes.container}>
         <Island component={ClassifiedSearchClient} props={viewModel} />
-        {editMode && <p className={classes.hint}>Inline results are displayed.</p>}
+        {editMode && <p className={classes.hint}>{t("classifiedSearch.hint.inlineResults")}</p>}
       </section>
     );
   },

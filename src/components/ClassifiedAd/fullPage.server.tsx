@@ -6,6 +6,7 @@ import {
   server,
 } from "@jahia/javascript-modules-library";
 import placeholder from "../../../static/illustrations/interface.svg";
+import { t } from "i18next";
 import {
   boolFrom,
   describePriceUnit,
@@ -42,13 +43,15 @@ jahiaComponent(
     const locale = currentResource?.getLocale().toString() ?? "en";
 
     const heading =
-      nonEmptyString(props["jcr:title"]) ?? nonEmptyString(props.title) ?? "Untitled classified ad";
+      nonEmptyString(props["jcr:title"]) ??
+      nonEmptyString(props.title) ??
+      t("classifiedAd.fallback.title");
 
     const priceValue = parseNumber(props.price);
     const priceCurrency = nonEmptyString(props.priceCurrency);
     const priceUnitCode = nonEmptyString(props.priceUnit)?.toUpperCase();
-    const formattedPrice = formatPrice(priceValue, priceCurrency, priceUnitCode, locale);
-    const priceUnitLabel = describePriceUnit(priceUnitCode);
+    const formattedPrice = formatPrice(priceValue, priceCurrency, priceUnitCode, locale, t);
+    const priceUnitLabel = describePriceUnit(priceUnitCode, t);
 
     const datePosted = formatDate(props.datePosted, locale);
     const validThrough = formatDate(props.validThrough, locale);
@@ -94,14 +97,14 @@ jahiaComponent(
         }
         return imageNodeToImgProps({
           imageNode: imageNode as JCRNodeWrapper,
-          alt: props.title ? String(props.title) : "Classified ad image",
+          alt: props.title ? String(props.title) : t("classifiedAd.fullPage.gallery.imageAlt"),
         });
       });
 
     if (!galleryImages.length) {
       galleryImages.push({
         src: buildModuleFileUrl(placeholder),
-        alt: "Placeholder",
+        alt: t("classifiedAd.fullPage.gallery.placeholderAlt"),
       });
     }
 
@@ -172,14 +175,14 @@ jahiaComponent(
     const secondaryImages = gallery.slice(1); */
 
     const infoItems = [
-      { label: "Category", value: categoryLabel },
-      { label: "Condition", value: conditionLabel },
-      { label: "Availability", value: availabilityLabel },
-      { label: "Type", value: itemTypeLabel },
-      { label: "SKU", value: sku },
-      { label: "Brand", value: brand },
-      { label: "Model", value: model },
-      { label: "Valid until", value: validThrough },
+      { label: t("classifiedAd.field.category"), value: categoryLabel },
+      { label: t("classifiedAd.field.condition"), value: conditionLabel },
+      { label: t("classifiedAd.field.availability"), value: availabilityLabel },
+      { label: t("classifiedAd.field.type"), value: itemTypeLabel },
+      { label: t("classifiedAd.field.sku"), value: sku },
+      { label: t("classifiedAd.field.brand"), value: brand },
+      { label: t("classifiedAd.field.model"), value: model },
+      { label: t("classifiedAd.field.validThrough"), value: validThrough },
     ].filter((item) => item.value);
 
     console.log("[ClassifiedAd] Categories to render:", categories);
@@ -191,14 +194,16 @@ jahiaComponent(
             <div className={classes.titleBlock}>
               <h1 className={classes.title}>{heading}</h1>
               <div className={classes.meta}>
-                {datePosted && <span>Posted {datePosted}</span>}
+                {datePosted && (
+                  <span>{t("classifiedAd.meta.postedOn", { date: datePosted })}</span>
+                )}
                 {locationCity && (
                   <span>
                     {locationCity}
                     {locationCountry ? `, ${locationCountry}` : ""}
                   </span>
                 )}
-                {featured && <span className={classes.badge}>Featured</span>}
+                {featured && <span className={classes.badge}>{t("classifiedAd.meta.featured")}</span>}
               </div>
             </div>
             <div className={classes.priceBlock}>
@@ -228,7 +233,9 @@ jahiaComponent(
 
             <aside className={classes.detailsColumn}>
               <section className={classes.summaryCard}>
-                <h2 className={classes.sectionTitle}>At a glance</h2>
+                <h2 className={classes.sectionTitle}>
+                  {t("classifiedAd.fullPage.section.atAGlance")}
+                </h2>
                 <ul className={classes.featureList}>
                   {infoItems.map((item) => (
                     <li key={item.label}>
@@ -237,27 +244,27 @@ jahiaComponent(
                     </li>
                   ))}
                   {availabilityLabel &&
-                    !infoItems.some((item) => item.label === "Availability") && (
+                    !infoItems.some((item) => item.label === t("classifiedAd.field.availability")) && (
                       <li>
-                        <span>Availability</span>
+                        <span>{t("classifiedAd.field.availability")}</span>
                         <strong>{availabilityLabel}</strong>
                       </li>
                     )}
                 </ul>
                 {externalUrl && (
                   <a className={classes.cta} href={externalUrl} target="_blank" rel="noreferrer">
-                    Visit listing
+                    {t("classifiedAd.fullPage.action.visitListing")}
                   </a>
                 )}
               </section>
 
               <section className={classes.contactCard}>
-                <h2 className={classes.sectionTitle}>Contact</h2>
+                <h2 className={classes.sectionTitle}>{t("classifiedAd.contact.title")}</h2>
                 {sellerName && <p className={classes.contactName}>{sellerName}</p>}
                 <div className={classes.contactActions}>
                   {contactEmail && (
                     <a className={classes.contactButton} href={`mailto:${contactEmail}`}>
-                      Email
+                      {t("classifiedAd.contact.email")}
                     </a>
                   )}
                   {contactPhone && (
@@ -265,7 +272,7 @@ jahiaComponent(
                       className={classes.contactButton}
                       href={contactPhoneHref ? `tel:${contactPhoneHref}` : "#"}
                     >
-                      Call
+                      {t("classifiedAd.contact.call")}
                     </a>
                   )}
                 </div>
@@ -289,7 +296,7 @@ jahiaComponent(
 
           {categories && categories.length > 0 && (
             <div>
-              <strong>Categories:</strong>
+              <strong>{t("classifiedAd.fullPage.labels.categories")}</strong>
               {categories.map(
                 (cat) => (
                   console.log("Rendering category:", cat),
@@ -300,7 +307,7 @@ jahiaComponent(
           )}
           {tags && tags.length > 0 && (
             <div>
-              <strong>Tags:</strong>
+              <strong>{t("classifiedAd.fullPage.labels.tags")}</strong>
               {tags.map((tag) => (
                 <span key={tag} className={classes.badgeAd}>
                   {tag}

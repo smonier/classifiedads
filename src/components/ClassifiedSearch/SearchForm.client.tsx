@@ -1,10 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
+import type { TFunction } from "i18next";
 import type { FormEvent } from "react";
 import type { JCRQueryBuilder } from "../../commons/libs/jcrQueryBuilder/index.js";
 import type { Constraint, RenderNodeProps } from "../../commons/libs/jcrQueryBuilder/types.js";
 import { useFormQuerySync } from "../../commons/hooks/useFormQuerySync.js";
 import { normalizeLabel } from "../../utils/classifieds.js";
 import classes from "./SearchForm.client.module.css";
+import { useTranslation } from "react-i18next";
 
 const CATEGORY_OPTIONS = [
   "vehicle",
@@ -29,15 +31,17 @@ type Props = {
   placeholder?: string;
 };
 
-const formatLabel = (value: string) => normalizeLabel(value) ?? value;
+const formatLabel = (value: string, translate: TFunction) => {
+  const key = `classifiedSearch.option.${value}`;
+  const translated = translate(key);
+  if (translated !== key) {
+    return translated;
+  }
+  return normalizeLabel(value) ?? value;
+};
 
-const toOptionEntries = (values: string[]) =>
-  values.map((value) => ({ value, label: formatLabel(value) }));
-
-const CATEGORY_ENTRIES = toOptionEntries(CATEGORY_OPTIONS);
-const CONDITION_ENTRIES = toOptionEntries(CONDITION_OPTIONS);
-const ITEM_TYPE_ENTRIES = toOptionEntries(ITEM_TYPE_OPTIONS);
-const AVAILABILITY_ENTRIES = toOptionEntries(AVAILABILITY_OPTIONS);
+const toOptionEntries = (values: string[], translate: TFunction) =>
+  values.map((value) => ({ value, label: formatLabel(value, translate) }));
 
 const getInitialSelections = (builder?: JCRQueryBuilder) => {
   if (!builder) {
@@ -155,10 +159,30 @@ const ClassifiedSearchFormClient = ({
   builder,
   setNodes,
   mode = target ? "url" : "instant",
-  placeholder = "Search classifieds",
+  placeholder,
 }: Props) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.language;
+  const resolvedPlaceholder = placeholder ?? t("classifiedSearch.placeholder.default");
   const { updateParam, getUrlString } = useFormQuerySync(target ?? null);
   const initialSelections = useMemo(() => getInitialSelections(builder), [builder]);
+
+  const categoryEntries = useMemo(
+    () => toOptionEntries(CATEGORY_OPTIONS, t),
+    [language, t],
+  );
+  const conditionEntries = useMemo(
+    () => toOptionEntries(CONDITION_OPTIONS, t),
+    [language, t],
+  );
+  const itemTypeEntries = useMemo(
+    () => toOptionEntries(ITEM_TYPE_OPTIONS, t),
+    [language, t],
+  );
+  const availabilityEntries = useMemo(
+    () => toOptionEntries(AVAILABILITY_OPTIONS, t),
+    [language, t],
+  );
 
   const [categories, setCategories] = useState<string[]>(initialSelections.category);
   const [conditions, setConditions] = useState<string[]>(initialSelections.condition);
@@ -310,23 +334,23 @@ const ClassifiedSearchFormClient = ({
 
   return (
     <form className={classes.form} onSubmit={handleSubmit}>
-      {(placeholder || hasAnyFilter) && (
+      {(resolvedPlaceholder || hasAnyFilter) && (
         <div className={classes.headerRow}>
-          {placeholder && <p className={classes.intro}>{placeholder}</p>}
+          {resolvedPlaceholder && <p className={classes.intro}>{resolvedPlaceholder}</p>}
           <button
             type="button"
             className={classes.submitButton}
             disabled={!hasAnyFilter}
             onClick={() => void clearAll()}
           >
-            Clear filters
+            {t("classifiedSearch.action.clearFilters")}
           </button>
         </div>
       )}
       <div className={classes.facets}>
         <MultiSelectDropdown
-          label="Category"
-          options={CATEGORY_ENTRIES}
+          label={t("classifiedAd.field.category")}
+          options={categoryEntries}
           values={categories}
           onChange={async (vals) => {
             setCategories(vals);
@@ -334,8 +358,8 @@ const ClassifiedSearchFormClient = ({
           }}
         />
         <MultiSelectDropdown
-          label="Condition"
-          options={CONDITION_ENTRIES}
+          label={t("classifiedAd.field.condition")}
+          options={conditionEntries}
           values={conditions}
           onChange={async (vals) => {
             setConditions(vals);
@@ -343,8 +367,8 @@ const ClassifiedSearchFormClient = ({
           }}
         />
         <MultiSelectDropdown
-          label="Item Type"
-          options={ITEM_TYPE_ENTRIES}
+          label={t("classifiedAd.field.itemType")}
+          options={itemTypeEntries}
           values={itemTypes}
           onChange={async (vals) => {
             setItemTypes(vals);
@@ -352,8 +376,8 @@ const ClassifiedSearchFormClient = ({
           }}
         />
         <MultiSelectDropdown
-          label="Availability"
-          options={AVAILABILITY_ENTRIES}
+          label={t("classifiedAd.field.availability")}
+          options={availabilityEntries}
           values={availability}
           onChange={async (vals) => {
             setAvailability(vals);
@@ -376,7 +400,7 @@ const ClassifiedSearchFormClient = ({
               className={classes.chip}
               onClick={() => void removeChip("category", v)}
             >
-              {formatLabel(v)}
+              {formatLabel(v, t)}
               <span aria-hidden>×</span>
             </button>
           ))}
@@ -387,7 +411,7 @@ const ClassifiedSearchFormClient = ({
               className={classes.chip}
               onClick={() => void removeChip("condition", v)}
             >
-              {formatLabel(v)}
+              {formatLabel(v, t)}
               <span aria-hidden>×</span>
             </button>
           ))}
@@ -398,7 +422,7 @@ const ClassifiedSearchFormClient = ({
               className={classes.chip}
               onClick={() => void removeChip("itemType", v)}
             >
-              {formatLabel(v)}
+              {formatLabel(v, t)}
               <span aria-hidden>×</span>
             </button>
           ))}
@@ -409,17 +433,25 @@ const ClassifiedSearchFormClient = ({
               className={classes.chip}
               onClick={() => void removeChip("availability", v)}
             >
-              {formatLabel(v)}
+              {formatLabel(v, t)}
               <span aria-hidden>×</span>
             </button>
           ))}
-          {minPrice && <span className={classes.chipStatic}>Min: {minPrice}</span>}
-          {maxPrice && <span className={classes.chipStatic}>Max: {maxPrice}</span>}
+          {minPrice && (
+            <span className={classes.chipStatic}>
+              {t("classifiedSearch.chip.min", { value: minPrice })}
+            </span>
+          )}
+          {maxPrice && (
+            <span className={classes.chipStatic}>
+              {t("classifiedSearch.chip.max", { value: maxPrice })}
+            </span>
+          )}
         </div>
       )}
 
       <div className={classes.fieldGroup}>
-        <label htmlFor="classified-search-minPrice">Min price</label>
+        <label htmlFor="classified-search-minPrice">{t("classifiedSearch.field.minPrice")}</label>
         <input
           id="classified-search-minPrice"
           type="number"
@@ -437,7 +469,7 @@ const ClassifiedSearchFormClient = ({
       </div>
 
       <div className={classes.fieldGroup}>
-        <label htmlFor="classified-search-maxPrice">Max price</label>
+        <label htmlFor="classified-search-maxPrice">{t("classifiedSearch.field.maxPrice")}</label>
         <input
           id="classified-search-maxPrice"
           type="number"

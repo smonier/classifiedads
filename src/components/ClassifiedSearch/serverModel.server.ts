@@ -4,6 +4,7 @@ import type { RenderContext } from "org.jahia.services.render";
 import { JCRQueryBuilder, gqlNodesQueryString } from "../../commons/libs/jcrQueryBuilder/index.js";
 import type { Constraint, JCRQueryConfig, RenderNodeProps } from "../../commons/libs/jcrQueryBuilder/types.js";
 import { resolveFolderReference, parseNumber, toStringValue } from "../../utils/classifieds.js";
+import { t } from "i18next";
 
 export const NO_RESULTS_UUID = "classified-search-no-results";
 
@@ -167,7 +168,7 @@ export const buildSearchViewModel = (
   if (nodes.length === 0) {
     nodes.push({
       uuid: NO_RESULTS_UUID,
-      html: '<p>No classifieds found.</p>',
+      html: t("classifiedSearch.results.emptyHtml"),
     });
   }
 
@@ -175,6 +176,6 @@ export const buildSearchViewModel = (
     builderConfig,
     builderConstraints: builder.getConstraints(),
     nodes,
-    placeholder: toStringValue(props.placeholder) ?? "Search classifieds",
+    placeholder: toStringValue(props.placeholder) ?? t("classifiedSearch.placeholder.default"),
   };
 };
