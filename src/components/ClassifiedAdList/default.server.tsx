@@ -5,6 +5,7 @@ import type { Maybe } from "../../utils/classifieds.js";
 import { parseNumber, resolveFolderReference, toStringValue } from "../../utils/classifieds.js";
 import classes from "./component.module.css";
 import type { RenderContext, Resource } from "org.jahia.services.render";
+import { t } from "i18next";
 
 const NODE_PATH_BY_UUID_QUERY = /* GraphQL */ `
   query ClassifiedAdListFolderPath($uuid: String!) {
@@ -210,7 +211,7 @@ jahiaComponent(
     let fetchError: unknown;
 
     if (!startNodePath && props.folder) {
-      fetchError = new Error("Unable to resolve target folder path");
+      fetchError = new Error(t("classifiedAdList.error.resolveFolder"));
     }
 
     if (!fetchError && executor && startNodePath) {
@@ -257,7 +258,7 @@ jahiaComponent(
         console.error("[ClassifiedAdList] Failed to execute JCR query", error);
       }
     } else if (!executor && props.folder && editMode) {
-      fetchError = new Error("GraphQL executor unavailable in this context");
+      fetchError = new Error(t("classifiedAdList.error.graphqlUnavailable"));
     }
 
     console.log("[ClassifiedAdList] Nodes to render", nodes);
@@ -284,14 +285,17 @@ jahiaComponent(
           <>
             {fetchError && editMode && (
               <div className={classes.error}>
-                Unable to fetch items from the selected folder. {String(fetchError)}
+                {t("classifiedAdList.error.fetch", {
+                  error:
+                    fetchError instanceof Error
+                      ? fetchError.message
+                      : String(fetchError),
+                })}
               </div>
             )}
             <RenderChildren />
             {editMode && (
-              <p className={classes.hint}>
-                Select a target folder containing published classified ads or create manual tiles below.
-              </p>
+              <p className={classes.hint}>{t("classifiedAdList.hint.selectFolder")}</p>
             )}
           </>
         )}

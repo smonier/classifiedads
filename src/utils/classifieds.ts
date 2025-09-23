@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import { CLASSIFIED_AD_PROPERTY_NAMES } from "../graphql/classifiedAds.js";
 
 export type Maybe<T> = T | null | undefined;
@@ -10,12 +11,28 @@ const PRICE_UNIT_SUFFIX: Record<string, string> = {
   HOUR: "/hour",
 };
 
+const PRICE_UNIT_SUFFIX_KEYS: Record<string, string | undefined> = {
+  TOTAL: undefined,
+  MONTH: "classifiedAd.price.suffix.month",
+  WEEK: "classifiedAd.price.suffix.week",
+  DAY: "classifiedAd.price.suffix.day",
+  HOUR: "classifiedAd.price.suffix.hour",
+};
+
 const PRICE_UNIT_TITLE: Record<string, string> = {
   TOTAL: "Total",
   MONTH: "Per month",
   WEEK: "Per week",
   DAY: "Per day",
   HOUR: "Per hour",
+};
+
+const PRICE_UNIT_TITLE_KEYS: Record<string, string | undefined> = {
+  TOTAL: "classifiedAd.price.title.total",
+  MONTH: "classifiedAd.price.title.month",
+  WEEK: "classifiedAd.price.title.week",
+  DAY: "classifiedAd.price.title.day",
+  HOUR: "classifiedAd.price.title.hour",
 };
 
 const callMethod = <T>(target: unknown, method: string): T | undefined => {
@@ -193,6 +210,7 @@ export const formatPrice = (
   currency: Maybe<unknown>,
   unit: Maybe<unknown>,
   locale: string,
+  translate?: TFunction,
 ) => {
   if (amount === undefined || amount === null) {
     return undefined;
@@ -209,14 +227,23 @@ export const formatPrice = (
     label = `${amount} ${currencyCode}`.trim();
   }
   const unitCode = nonEmptyString(unit)?.toUpperCase();
-  const suffix = unitCode ? PRICE_UNIT_SUFFIX[unitCode] ?? `/${unitCode.toLowerCase()}` : "";
+  const fallbackSuffix = unitCode ? PRICE_UNIT_SUFFIX[unitCode] ?? `/${unitCode.toLowerCase()}` : "";
+  const suffixKey = unitCode ? PRICE_UNIT_SUFFIX_KEYS[unitCode] : undefined;
+  const suffix = suffixKey ? translate?.(suffixKey) ?? fallbackSuffix : fallbackSuffix;
   return suffix ? `${label} ${suffix}` : label;
 };
 
-export const describePriceUnit = (unit: Maybe<unknown>) => {
+export const describePriceUnit = (unit: Maybe<unknown>, translate?: TFunction) => {
   const unitCode = nonEmptyString(unit)?.toUpperCase();
   if (!unitCode) {
     return undefined;
+  }
+  const key = PRICE_UNIT_TITLE_KEYS[unitCode];
+  if (key) {
+    const translated = translate?.(key);
+    if (translated) {
+      return translated;
+    }
   }
   return PRICE_UNIT_TITLE[unitCode] ?? unitCode;
 };

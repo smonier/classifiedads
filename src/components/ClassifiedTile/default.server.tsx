@@ -9,6 +9,7 @@ import {
   toArray,
 } from "../../utils/classifieds.js";
 import classes from "./component.module.css";
+import { t } from "i18next";
 import type { ImgHTMLAttributes } from "react";
 import type { JCRNodeWrapper } from "org.jahia.services.content";
 import type { RenderContext, Resource } from "org.jahia.services.render";
@@ -118,8 +119,8 @@ jahiaComponent(
     const targetPrice = parseNumber(extractValue(targetNode, "price"));
     const targetCurrency = extractValue(targetNode, "priceCurrency");
     const targetUnit = extractValue(targetNode, "priceUnit");
-    const formattedPrice = formatPrice(targetPrice, targetCurrency, targetUnit, locale);
-    const priceUnitLabel = describePriceUnit(targetUnit);
+    const formattedPrice = formatPrice(targetPrice, targetCurrency, targetUnit, locale, t);
+    const priceUnitLabel = describePriceUnit(targetUnit, t);
     const locationCity = extractValue(targetNode, "locationCity") as Maybe<string>;
     const locationCountry = extractValue(targetNode, "locationCountry") as Maybe<string>;
     const category = extractValue(targetNode, "category") as Maybe<string>;
@@ -192,10 +193,10 @@ jahiaComponent(
           ) : (
             <div className={classes.placeholder}>
               <img src={placeholderSrc} alt="" loading="lazy" />
-              {editMode && <span>Add an image</span>}
+              {editMode && <span>{t("classifiedTile.placeholder.addImage")}</span>}
             </div>
           )}
-          {featured && <span className={classes.badge}>Featured</span>}
+          {featured && <span className={classes.badge}>{t("classifiedAd.meta.featured")}</span>}
         </figure>
 
         <div className={classes.body}>
@@ -224,7 +225,7 @@ jahiaComponent(
           )}
           {href && (
             <a className={classes.cta} href={href}>
-              View details
+              {t("classifiedTile.action.viewDetails")}
             </a>
           )}
         </footer>

@@ -4,6 +4,7 @@ import {
   jahiaComponent,
   server,
 } from "@jahia/javascript-modules-library";
+import { t } from "i18next";
 import placeholder from "../../../static/illustrations/interface.svg"; // Adjust if needed
 import {
   boolFrom,
@@ -115,13 +116,15 @@ jahiaComponent(
     const placeholderSrc = buildModuleFileUrl("static/illustrations/interface.svg");
 
     const heading =
-      nonEmptyString(props["jcr:title"]) ?? nonEmptyString(props.title) ?? "Untitled classified ad";
+      nonEmptyString(props["jcr:title"]) ??
+      nonEmptyString(props.title) ??
+      t("classifiedAd.fallback.title");
 
     const priceValue = parseNumber(props.price);
     const priceCurrency = nonEmptyString(props.priceCurrency);
     const priceUnitCode = nonEmptyString(props.priceUnit)?.toUpperCase();
-    const formattedPrice = formatPrice(priceValue, priceCurrency, priceUnitCode, locale);
-    const priceUnitLabel = describePriceUnit(priceUnitCode);
+    const formattedPrice = formatPrice(priceValue, priceCurrency, priceUnitCode, locale, t);
+    const priceUnitLabel = describePriceUnit(priceUnitCode, t);
 
     const datePosted = formatDate(props.datePosted, locale);
     const validThrough = formatDate(props.validThrough, locale);
@@ -187,14 +190,14 @@ jahiaComponent(
       .filter((image) => Boolean(image));
 
     const infoItems = [
-      { label: "Category", value: categoryLabel },
-      { label: "Condition", value: conditionLabel },
-      { label: "Availability", value: availabilityLabel },
-      { label: "Type", value: itemTypeLabel },
-      { label: "SKU", value: sku },
-      { label: "Brand", value: brand },
-      { label: "Model", value: model },
-      { label: "Valid until", value: validThrough },
+      { label: t("classifiedAd.field.category"), value: categoryLabel },
+      { label: t("classifiedAd.field.condition"), value: conditionLabel },
+      { label: t("classifiedAd.field.availability"), value: availabilityLabel },
+      { label: t("classifiedAd.field.type"), value: itemTypeLabel },
+      { label: t("classifiedAd.field.sku"), value: sku },
+      { label: t("classifiedAd.field.brand"), value: brand },
+      { label: t("classifiedAd.field.model"), value: model },
+      { label: t("classifiedAd.field.validThrough"), value: validThrough },
     ].filter((item) => item.value);
 
     const editMode = renderContext?.isEditMode ?? false;
@@ -205,7 +208,9 @@ jahiaComponent(
           <div>
             <h1 className={classes.title}>{heading}</h1>
             <div className={classes.meta}>
-              {datePosted && <span>Posted {datePosted}</span>}
+              {datePosted && (
+                <span>{t("classifiedAd.meta.postedOn", { date: datePosted })}</span>
+              )}
               {locationCity && (
                 <span>
                   {locationCity}
@@ -213,12 +218,12 @@ jahiaComponent(
                 </span>
               )}
               {priceCurrency && priceValue === undefined && (
-                <span>{priceCurrency} price available on request</span>
+                <span>{t("classifiedAd.meta.priceOnRequest", { currency: priceCurrency })}</span>
               )}
             </div>
           </div>
           <div className={classes.actions}>
-            {featured && <span className={classes.badge}>Featured</span>}
+            {featured && <span className={classes.badge}>{t("classifiedAd.meta.featured")}</span>}
             {formattedPrice && (
               <strong className={classes.price}>
                 {formattedPrice}
@@ -243,7 +248,7 @@ jahiaComponent(
             </div>
           )}
           {gallery.length === 0 && editMode && (
-            <p className={classes.hint}>Add images to enrich the listing gallery.</p>
+            <p className={classes.hint}>{t("classifiedAd.gallery.addImagesHint")}</p>
           )}
         </div>
 
@@ -292,12 +297,12 @@ jahiaComponent(
 
         {(sellerName || contactEmail || contactPhone || allowContactByForm) && (
           <section className={classes.contactCard}>
-            <h2 className={classes.contactTitle}>Contact</h2>
+            <h2 className={classes.contactTitle}>{t("classifiedAd.contact.title")}</h2>
             {sellerName && <div className={classes.infoValue}>{sellerName}</div>}
             <div className={classes.contactList}>
               {contactEmail && (
                 <a className={classes.contactAction} href={`mailto:${contactEmail}`}>
-                  Email seller
+                  {t("classifiedAd.contact.emailSeller")}
                 </a>
               )}
               {contactPhone && (
@@ -305,12 +310,12 @@ jahiaComponent(
                   className={classes.contactAction}
                   href={contactPhoneHref ? `tel:${contactPhoneHref}` : undefined}
                 >
-                  Call {contactPhone}
+                  {t("classifiedAd.contact.callPhone", { phone: contactPhone })}
                 </a>
               )}
               {allowContactByForm && !contactEmail && (
                 <button type="button" className={classes.contactAction}>
-                  Contact seller
+                  {t("classifiedAd.contact.contactSeller")}
                 </button>
               )}
             </div>
@@ -319,7 +324,7 @@ jahiaComponent(
 
         {externalUrl && (
           <a className={classes.externalLink} href={externalUrl} target="_blank" rel="noreferrer">
-            View original listing
+            {t("classifiedAd.action.viewOriginal")}
           </a>
         )}
       </article>
