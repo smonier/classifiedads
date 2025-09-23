@@ -1,4 +1,4 @@
-import { Area, jahiaComponent } from "@jahia/javascript-modules-library";
+import { Area, jahiaComponent, Render } from "@jahia/javascript-modules-library";
 import { Layout } from "../Layout.jsx";
 
 type BasicPageProps = {
@@ -14,6 +14,7 @@ jahiaComponent(
   },
   ({ "jcr:title": title }: BasicPageProps) => (
     <Layout title={title}>
+      <Render content={{ nodeType: "classifiedads:navBar" }} />
       <Area name="main" />
     </Layout>
   ),

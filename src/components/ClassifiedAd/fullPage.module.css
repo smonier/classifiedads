@@ -269,3 +269,17 @@
     grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   }
 }
+
+.badgeAd {
+  display: inline-block;
+  background-color: #eef2f6;
+  color: #2c3e50;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  margin: 0.25rem 0.5rem 0.25rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  white-space: nowrap;
+}

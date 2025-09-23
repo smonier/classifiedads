@@ -1,6 +1,6 @@
 import {
   buildModuleFileUrl,
-  buildNodeUrl,
+  Render,
   Island,
   jahiaComponent,
   server,
@@ -14,61 +14,20 @@ import {
   normalizeLabel,
   nonEmptyString,
   parseNumber,
-  resolveImageUrl,
   toArray,
   toStringValue,
 } from "../../utils/classifieds.js";
 import GalleryClient from "../../commons/Gallery.client";
 
 import classes from "./fullPage.module.css";
-import type { ImgHTMLAttributes } from "react";
 import type { JCRNodeWrapper } from "org.jahia.services.content";
 import type { RenderContext, Resource } from "org.jahia.services.render";
 import { imageNodeToImgProps } from "../../commons/libs/imageNodeToProps/index.js";
-
-type Maybe<T> = T | null | undefined;
-
-type ClassifiedAdProps = {
-  ["jcr:title"]?: Maybe<unknown>;
-  title?: Maybe<unknown>;
-  description?: Maybe<unknown>;
-  category?: Maybe<unknown>;
-  condition?: Maybe<unknown>;
-  availability?: Maybe<unknown>;
-  datePosted?: Maybe<unknown>;
-  validThrough?: Maybe<unknown>;
-  itemType?: Maybe<unknown>;
-  externalUrl?: Maybe<unknown>;
-  sku?: Maybe<unknown>;
-  brand?: Maybe<unknown>;
-  model?: Maybe<unknown>;
-  sellerName?: Maybe<unknown>;
-  contactEmail?: Maybe<unknown>;
-  contactPhone?: Maybe<unknown>;
-  price?: Maybe<unknown>;
-  priceCurrency?: Maybe<unknown>;
-  priceUnit?: Maybe<unknown>;
-  featured?: Maybe<unknown>;
-  allowContactByForm?: Maybe<unknown>;
-  images?: Maybe<Iterable<JCRNodeWrapper> | ArrayLike<JCRNodeWrapper> | unknown>;
-  locationAddress?: Maybe<unknown>;
-  locationPostalCode?: Maybe<unknown>;
-  locationCity?: Maybe<unknown>;
-  locationCountry?: Maybe<unknown>;
-};
+import type { ClassifiedAdProps } from "./types.ts";
 
 type ClassifiedAdContext = {
   currentResource?: Resource;
   renderContext?: RenderContext;
-};
-
-const isJcrNode = (value: unknown): value is JCRNodeWrapper => {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as Partial<JCRNodeWrapper>;
-  return typeof candidate.getIdentifier === "function" && typeof candidate.getPath === "function";
 };
 
 jahiaComponent(
@@ -81,7 +40,6 @@ jahiaComponent(
   (props: ClassifiedAdProps, context: ClassifiedAdContext) => {
     const { renderContext, currentResource } = context;
     const locale = currentResource?.getLocale().toString() ?? "en";
-    const placeholderSrc = buildModuleFileUrl("static/illustrations/interface.svg");
 
     const heading =
       nonEmptyString(props["jcr:title"]) ?? nonEmptyString(props.title) ?? "Untitled classified ad";
@@ -127,9 +85,7 @@ jahiaComponent(
     const contactPhoneHref = contactPhone ? contactPhone.replace(/[^+\d]/g, "") : undefined;
     const externalUrl = nonEmptyString(props.externalUrl);
 
-    const galleryImages = toArray<unknown>(
-      props.images as Maybe<Iterable<JCRNodeWrapper> | ArrayLike<JCRNodeWrapper>>,
-    )
+    const galleryImages = toArray<unknown>(props.images as JCRNodeWrapper[])
       .filter((imageNode) => Boolean(imageNode))
       .map((imageNode) => {
         // Cache dependency for all nodes involved
@@ -149,6 +105,19 @@ jahiaComponent(
       });
     }
 
+    const categories = toArray(props["j:defaultCategory"]).filter(Boolean);
+    categories.forEach((cat) => {
+      if (renderContext) {
+        server.render.addCacheDependency({ node: cat }, renderContext);
+      }
+    });
+
+    const tags = toArray(props["j:tagList"]).filter(Boolean);
+    tags.forEach((tag) => {
+      if (renderContext) {
+        server.render.addCacheDependency({ tag }, renderContext);
+      }
+    });
     /* const gallery = toArray<unknown>(props.images as Maybe<Iterable<unknown> | ArrayLike<unknown>>)
       .map((item, index) => {
         if (isJcrNode(item)) {
@@ -212,6 +181,8 @@ jahiaComponent(
       { label: "Model", value: model },
       { label: "Valid until", value: validThrough },
     ].filter((item) => item.value);
+
+    console.log("[ClassifiedAd] Categories to render:", categories);
 
     return (
       <section className={classes.page}>
@@ -314,6 +285,28 @@ jahiaComponent(
               className={classes.description}
               dangerouslySetInnerHTML={{ __html: descriptionHtml }}
             />
+          )}
+
+          {categories && categories.length > 0 && (
+            <div>
+              <strong>Categories:</strong>
+              {categories.map(
+                (cat) => (
+                  console.log("Rendering category:", cat),
+                  (<Render key={cat.getIdentifier()} node={cat} view="badge" readOnly />)
+                ),
+              )}
+            </div>
+          )}
+          {tags && tags.length > 0 && (
+            <div>
+              <strong>Tags:</strong>
+              {tags.map((tag) => (
+                <span key={tag} className={classes.badgeAd}>
+                  {tag}
+                </span>
+              ))}
+            </div>
           )}
         </div>
       </section>

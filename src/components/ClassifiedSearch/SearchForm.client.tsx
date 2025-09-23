@@ -73,11 +73,12 @@ const getInitialSelections = (builder?: JCRQueryBuilder) => {
         selections[prop] = values.map(String);
         break;
       case "price": {
+        const formatDecimal = (val: number) => (Number.isInteger(val) ? `${val}.0` : `${val}`);
         if (operator === ">=" && typeof values[0] === "number") {
-          selections.minPrice = String(values[0]);
+          selections.minPrice = formatDecimal(values[0]);
         }
         if (operator === "<=" && typeof values[0] === "number") {
-          selections.maxPrice = String(values[0]);
+          selections.maxPrice = formatDecimal(values[0]);
         }
         break;
       }
@@ -124,7 +125,12 @@ const MultiSelectDropdown = ({
       >
         <span>{label}</span>
         <span className={classes.dropdownCount}>{values.length}</span>
-        {values.length > 0 && <span className={classes.dropdownPreview}>{selectedPreview}{extra}</span>}
+        {values.length > 0 && (
+          <span className={classes.dropdownPreview}>
+            {selectedPreview}
+            {extra}
+          </span>
+        )}
       </button>
       {open && (
         <div className={classes.dropdownMenu} role="menu">
@@ -189,36 +195,37 @@ const ClassifiedSearchFormClient = ({
     [builder, executeBuilder, mode, updateParam],
   );
 
-  const handlePriceCommit = useCallback(
-    async () => {
-      if (mode === "url") {
-        updateParam("minPrice", minPrice ? [minPrice] : []);
-        updateParam("maxPrice", maxPrice ? [maxPrice] : []);
-        return;
-      }
+  const handlePriceCommit = useCallback(async () => {
+    if (mode === "url") {
+      updateParam("minPrice", minPrice ? [minPrice] : []);
+      updateParam("maxPrice", maxPrice ? [maxPrice] : []);
+      return;
+    }
 
-      if (!builder) {
-        return;
-      }
+    if (!builder) {
+      return;
+    }
 
-      builder.deleteConstraints("price");
-      const next: Constraint[] = [];
-      const minNumeric = Number.parseFloat(minPrice);
-      if (!Number.isNaN(minNumeric)) {
-        next.push({ prop: "price", operator: ">=", values: [minNumeric] });
-      }
-      const maxNumeric = Number.parseFloat(maxPrice);
-      if (!Number.isNaN(maxNumeric)) {
-        next.push({ prop: "price", operator: "<=", values: [maxNumeric] });
-      }
-      if (next.length > 0) {
-        builder.setConstraints(next);
-      }
+    builder.deleteConstraints("price");
+    const next: Constraint[] = [];
 
-      await executeBuilder();
-    },
-    [builder, executeBuilder, maxPrice, minPrice, mode, updateParam],
-  );
+    const formatDecimal = (val: number) => (Number.isInteger(val) ? `${val}.0` : `${val}`);
+
+    const minNumeric = Number.parseFloat(minPrice);
+    if (!Number.isNaN(minNumeric)) {
+      next.push({ prop: "price", operator: ">=", values: [formatDecimal(minNumeric)] });
+    }
+    const maxNumeric = Number.parseFloat(maxPrice);
+    if (!Number.isNaN(maxNumeric)) {
+      next.push({ prop: "price", operator: "<=", values: [formatDecimal(maxNumeric)] });
+    }
+
+    if (next.length > 0) {
+      builder.setConstraints(next);
+    }
+
+    await executeBuilder();
+  }, [builder, executeBuilder, maxPrice, minPrice, mode, updateParam]);
 
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -355,28 +362,53 @@ const ClassifiedSearchFormClient = ({
         />
       </div>
 
-      {(categories.length || conditions.length || itemTypes.length || availability.length || minPrice || maxPrice) && (
+      {(categories.length ||
+        conditions.length ||
+        itemTypes.length ||
+        availability.length ||
+        minPrice ||
+        maxPrice) && (
         <div className={classes.chips}>
           {categories.map((v) => (
-            <button key={`cat-${v}`} type="button" className={classes.chip} onClick={() => void removeChip("category", v)}>
+            <button
+              key={`cat-${v}`}
+              type="button"
+              className={classes.chip}
+              onClick={() => void removeChip("category", v)}
+            >
               {formatLabel(v)}
               <span aria-hidden>×</span>
             </button>
           ))}
           {conditions.map((v) => (
-            <button key={`cond-${v}`} type="button" className={classes.chip} onClick={() => void removeChip("condition", v)}>
+            <button
+              key={`cond-${v}`}
+              type="button"
+              className={classes.chip}
+              onClick={() => void removeChip("condition", v)}
+            >
               {formatLabel(v)}
               <span aria-hidden>×</span>
             </button>
           ))}
           {itemTypes.map((v) => (
-            <button key={`type-${v}`} type="button" className={classes.chip} onClick={() => void removeChip("itemType", v)}>
+            <button
+              key={`type-${v}`}
+              type="button"
+              className={classes.chip}
+              onClick={() => void removeChip("itemType", v)}
+            >
               {formatLabel(v)}
               <span aria-hidden>×</span>
             </button>
           ))}
           {availability.map((v) => (
-            <button key={`avail-${v}`} type="button" className={classes.chip} onClick={() => void removeChip("availability", v)}>
+            <button
+              key={`avail-${v}`}
+              type="button"
+              className={classes.chip}
+              onClick={() => void removeChip("availability", v)}
+            >
               {formatLabel(v)}
               <span aria-hidden>×</span>
             </button>
@@ -393,7 +425,13 @@ const ClassifiedSearchFormClient = ({
           type="number"
           value={minPrice}
           onChange={(event) => setMinPrice(event.target.value)}
-          onBlur={handlePriceCommit}
+          onBlur={() => {
+            const val = parseFloat(minPrice);
+            if (!Number.isNaN(val)) {
+              setMinPrice(Number.isInteger(val) ? `${val}.0` : `${val}`);
+            }
+            void handlePriceCommit();
+          }}
           placeholder="0"
         />
       </div>
@@ -405,7 +443,13 @@ const ClassifiedSearchFormClient = ({
           type="number"
           value={maxPrice}
           onChange={(event) => setMaxPrice(event.target.value)}
-          onBlur={handlePriceCommit}
+          onBlur={() => {
+            const val = parseFloat(maxPrice);
+            if (!Number.isNaN(val)) {
+              setMaxPrice(Number.isInteger(val) ? `${val}.0` : `${val}`);
+            }
+            void handlePriceCommit();
+          }}
           placeholder="1000"
         />
       </div>

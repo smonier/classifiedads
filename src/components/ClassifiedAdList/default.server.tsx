@@ -260,6 +260,8 @@ jahiaComponent(
       fetchError = new Error("GraphQL executor unavailable in this context");
     }
 
+    console.log("[ClassifiedAdList] Nodes to render", nodes);
+
     return (
       <section className={classes.list}>
         {typeof teaser === "string" && (
@@ -268,12 +270,15 @@ jahiaComponent(
 
         {nodes.length > 0 ? (
           <div className={classes.items}>
-            {nodes.map((node, index) => (
-              <div
-                key={node.uuid || `classified-ad-${index}`}
-                dangerouslySetInnerHTML={{ __html: node.html }}
-              />
-            ))}
+            {nodes.map((node, index) => {
+              const html = typeof node.html === "string" ? node.html : "";
+              return (
+                <div
+                  key={node.uuid || `classified-ad-${index}`}
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              );
+            })}
           </div>
         ) : (
           <>

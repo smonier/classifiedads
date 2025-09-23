@@ -1,0 +1,15 @@
+.main {
+	composes: rowCols_lg_3 from "design-system/Grid/styles.module.css";
+	composes: rowCols_md_2 from "design-system/Grid/styles.module.css";
+	composes: rowCols_sm_1 from "design-system/Grid/styles.module.css";
+}
+
+.root .main {
+	--luxe-gutter-x: 0;
+	--luxe-gutter-y: 0;
+
+	> div {
+		--luxe-gutter-x: 0;
+		--luxe-gutter-y: 0;
+	}
+}
