@@ -19,6 +19,7 @@ import {
   toStringValue,
 } from "../../utils/classifieds.js";
 import GalleryClient from "../../commons/Gallery.client";
+import FullPageClient from "./fullPage.client.js";
 
 import classes from "./fullPage.module.css";
 import type { JCRNodeWrapper } from "org.jahia.services.content";
@@ -192,7 +193,16 @@ jahiaComponent(
         <div className={classes.container}>
           <header className={classes.header}>
             <div className={classes.titleBlock}>
-              <h1 className={classes.title}>{heading}</h1>
+              <div className={classes.titleRow}>
+                <Island
+                  component={FullPageClient}
+                  props={{
+                    label: t("classifiedAd.fullPage.action.back"),
+                    className: classes.backButton,
+                  }}
+                />
+                <h1 className={classes.title}>{heading}</h1>
+              </div>
               <div className={classes.meta}>
                 {datePosted && (
                   <span>{t("classifiedAd.meta.postedOn", { date: datePosted })}</span>
