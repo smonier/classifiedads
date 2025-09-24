@@ -25,7 +25,7 @@
 // Common pricing fields (schema.org Offer)
 [classadmix:withPrice] mixin
  - price (double)
- - priceCurrency (string, choicelist[resourceBundle]) < 'EUR','USD','GBP'
+ - priceCurrency (string, choicelist[resourceBundle]) < 'EUR','USD','GBP','CHF','JPY','CNY','OTHER'
  - priceUnit (string, choicelist[resourceBundle]) < 'TOTAL','MONTH','WEEK','DAY','HOUR'
 
 // Media helper
